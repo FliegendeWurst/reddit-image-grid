@@ -1,6 +1,10 @@
 reddit-image-grid
 =================
 
+## Similar tools
+
+- https://github.com/ubershmekel/redditp: full screen slide show
+
 ## Configuration
 
 Set both `REDDIT_IMAGE_GRID_BASE_URL` (without trailing slash) and `REDDIT_IMAGE_GRID_PORT`.
@@ -17,7 +21,7 @@ REDDIT_IMAGE_GRID_PORT=8080
 `hls.min.js` is derived from Apache 2.0-licensed [hls.js](https://github.com/video-dev/hls.js/).
 `favicon.png` is derived from CC BY-SA 4.0-licensed [Arcticons](https://github.com/Arcticons-Team/Arcticons).
 
-All other content:
+Everything else:
 
 Copyright © 2025 FliegendeWurst
 

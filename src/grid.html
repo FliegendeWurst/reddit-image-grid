@@ -15,6 +15,12 @@ body {
 	.card > span {
 		color: #000;
 	}
+	#help a, fieldset a {
+		color: #aaf;
+	}
+	#help a:visited, fieldset a:visited {
+		color: #faf;
+	}
 }
 body {
 	overflow-y: scroll;
@@ -90,6 +96,14 @@ fieldset {
   	font-size: 1rem;
 	margin-left: .3em;
 }
+#help {
+	border: 0.3em outset gold;
+	border-radius: 1em;
+	padding: 1em;
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 50em;
+}
 </style>
 
 <form>
@@ -131,10 +145,26 @@ fieldset {
 <!-- <label><input type="checkbox" id="firstImage">Show only first image of gallery</label> -->
 <label><input type="checkbox" id="autoplay" autocomplete="off" {{ if autoplay }}checked{{ endif }}>Autoplay videos</label>
 </fieldset>
+<fieldset>
+<legend>About</legend>
+<a href="https://github.com/FliegendeWurst/reddit-image-grid">Repository</a>
+</fieldset>
 </form>
 
 {{ if any_hls}}<script src="{ base_url }/hls.min.js"></script>{{ endif }}
 
+{{ if subs_are_empty }}
+<div id="help">
+To get started, enter a subreddit above. Or try one of these links:
+<ul>
+	<li><a href="{base_url}/r/EarthPorn+BotanicalPorn+WaterPorn+SeaPorn+SkyPorn+FirePorn+DesertPorn+WinterPorn+AutumnPorn+WeatherPorn+GeologyPorn+SpacePorn+BeachPorn+MushroomPorn+SpringPorn+SummerPorn+LavaPorn+LakePorn">Nature network</a></li>
+	<li><a href="{base_url}/r/CityPorn+VillagePorn+RuralPorn+ArchitecturePorn+HousePorn+CabinPorn+ChurchPorn+AbandonedPorn+CemeteryPorn+InfrastructurePorn+MachinePorn+CarPorn+F1Porn+MotorcyclePorn+MilitaryPorn+GunPorn+KnifePorn+BoatPorn+RidesPorn+DestructionPorn+ThingsCutInHalfPorn+StarshipPorn+ToolPorn+TechnologyPorn+BridgePorn+PolicePorn+SteamPorn+RetailPorn+SpaceFlightPorn+roadporn+drydockporn">Synthetic network</a></li>
+	<li><a href="{base_url}/r/AnimalPorn+HumanPorn+EarthlingPorn+AdrenalinePorn+ClimbingPorn+SportsPorn+AgriculturePorn+TeaPorn+BonsaiPorn+FoodPorn+CulinaryPorn+DessertPorn">Organic network</a></li>
+	<li><a href="{base_url}/r/DesignPorn+RoomPorn+AlbumArtPorn+MetalPorn+MoviePosterPorn+TelevisionPosterPorn+ComicBookPorn+StreetArtPorn+AdPorn+ArtPorn+FractalPorn+InstrumentPorn+ExposurePorn+MacroPorn+MicroPorn+GeekPorn+MTGPorn+GamerPorn+PowerWashingPorn+AerialPorn+OrganizationPorn+FashionPorn+AVPorn+ApocalypsePorn+InfraredPorn+ViewPorn+HellscapePorn+sculptureporn">Aesthetic network</a></li>
+	<li><a href="{base_url}/r/HistoryPorn+UniformPorn+BookPorn+NewsPorn+QuotesPorn+FuturePorn+FossilPorn+MegalithPorn+ArtefactPorn">Scholastic network</a></li>
+</ul>
+</div>
+{{ endif }}
 <div class="grid" id="main-grid">
 	{{ for card in cards }}
 	<div class="card" style="grid-column-end: span {card.width}; grid-row-end: span {card.height}; opacity: 1;">

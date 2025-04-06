@@ -47,9 +47,6 @@ impl FromStr for Sort {
 	}
 }
 
-// https://codepen.io/ypinskiy/pen/bLWKxw?editors=0010
-// https://www.reddit.com/r/cats/hot.json?limit=20&t=all&show=all
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Time {
 	Hour,
@@ -344,8 +341,7 @@ struct RedditDataPostData {
 	subreddit: String,
 	author: String,
 	permalink: String,
-	thumbnail_height: Option<usize>,
-	thumbnail_width: Option<usize>,
+	// Do not use thumbnail_height/thumbnail_width, they are highly unreliable.
 	/// Available for videos
 	secure_media: Option<RedditDataSecureMedia>,
 	/// Available for videos / non-reddit-hosted images
