@@ -8,7 +8,7 @@ repository = "https://github.com/FliegendeWurst/reddit-image-grid"
 
 [dependencies]
 anyhow = { version = "1.0.97", default-features = false, features = ["std"] }
-axum = { version = "0.8.3", default-features = false, features = ["http1", "http2", "macros", "query", "tokio"] }
+axum = { version = "0.8.3", default-features = false, features = ["http1", "http2", "json", "macros", "query", "tokio"] }
 axum-client-ip = "1.0.0"
 html-escape = "0.2.13"
 itertools = "0.14.0"

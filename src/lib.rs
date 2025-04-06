@@ -1,5 +1,10 @@
 use std::{env, error::Error, fmt::Display, sync::LazyLock};
 
+pub static USE_SERVER_FETCH: LazyLock<bool> = LazyLock::new(|| {
+	env::var("REDDIT_IMAGE_GRID_USE_SERVER_FETCH")
+		.map(|x| x != "" && x != "0")
+		.unwrap_or(false)
+});
 pub static BASE_URL: LazyLock<String> =
 	LazyLock::new(|| env::var("REDDIT_IMAGE_GRID_BASE_URL").expect("REDDIT_IMAGE_GRID_BASE_URL not set"));
 pub static PORT: LazyLock<u16> = LazyLock::new(|| {

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{{ if full_page }}<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="{ base_url }/favicon.png" />
 <title>{ title }</title>
@@ -104,6 +104,14 @@ fieldset {
 	margin-right: auto;
 	max-width: 50em;
 }
+#help-error {
+	border: 0.3em outset firebrick;
+	border-radius: 1em;
+	padding: 1em;
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 50em;
+}
 </style>
 
 <form>
@@ -165,7 +173,9 @@ To get started, enter a subreddit above. Or try one of these links:
 </ul>
 </div>
 {{ endif }}
-<div class="grid" id="main-grid">
+
+<div class="grid" id="main-grid">{{ endif }}
+{{ if have_data }}
 	{{ for card in cards }}
 	<div class="card" style="grid-column-end: span {card.width}; grid-row-end: span {card.height}; opacity: 1;">
 		{{ if card.is_hls }}
@@ -214,7 +224,41 @@ To get started, enter a subreddit above. Or try one of these links:
 		<span><a href="https://old.reddit.com/r/{card.sub}">/r/{card.sub}</a> · <a href="https://old.reddit.com/u/{card.user}">/u/{card.user}</a> · <a href="https://old.reddit.com{card.permalink}">{card.title}</a></span>
 	</div>
 	{{ endfor }}
-</div>
+{{ endif }}
+{{ if full_page }}</div>
+{{ if not have_data }}
+<script>
+"use strict";
+async function doIt() {
+const grid = document.getElementById("main-grid");
+try {
+	const resp = await fetch("{ fetch_url | raw_html }");
+	if (!resp.ok) {
+		grid.outerHTML = '<div id="help-error">Error fetching Reddit JSON data.</div>';
+	} else {
+		const text = await resp.text();
+		const rendered = await fetch("{ base_url }/render?sub={subs}&sort={sort}&time={time}", {
+			method: "POST",
+  			headers: {
+    			"Content-Type": "application/json",
+  			},
+			body: text,
+		});
+		if (!rendered.ok) {
+			grid.outerHTML = '<div id="help-error">Error rendering Reddit JSON data.</div>';
+		} else {
+			const html = await rendered.text();
+			grid.innerHTML = html;
+		}
+	}
+} catch (e) {
+	console.log(e);
+	grid.outerHTML = '<div id="help-error">Error fetching Reddit JSON data. If you use Firefox, disable Enhanced Tracking Protection for this site (left of URL bar).</div>';
+}
+}
+doIt();
+</script>
+{{ endif }}
 
 <script>
 	"use strict";
@@ -317,4 +361,4 @@ To get started, enter a subreddit above. Or try one of these links:
 	};
 	sizeInput.addEventListener("input", listener);
 	document.addEventListener("DOMContentLoaded", listener);
-</script>
+</script>{{ endif }}

@@ -149,6 +149,10 @@ pub fn get_posts(
 	}
 }
 
+pub fn make_request_url(sub: &str, sort: Sort, time: Time, limit: u64) -> String {
+	format!("https://www.reddit.com/r/{sub}/{sort}.json?limit={limit}&t={time}&show=all")
+}
+
 fn get_posts_internal(
 	client: &Agent,
 	sub: &str,
@@ -156,13 +160,14 @@ fn get_posts_internal(
 	time: Time,
 	limit: u64,
 ) -> Result<Vec<Post>, anyhow::Error> {
-	let req = client.get(format!(
-		"https://www.reddit.com/r/{sub}/{sort}.json?limit={limit}&t={time}&show=all"
-	));
+	let req = client.get(make_request_url(sub, sort, time, limit));
 	let mut res = req.call()?;
 	let body = res.body_mut();
 	let json: RedditData = body.read_json()?;
+	parse_json(json, sub, sort, time)
+}
 
+pub fn parse_json(json: RedditData, sub: &str, sort: Sort, time: Time) -> Result<Vec<Post>, anyhow::Error> {
 	let mut posts = vec![];
 
 	let mut count_rm = 0;
@@ -341,7 +346,7 @@ fn get_posts_internal(
 }
 
 #[derive(Deserialize, Debug)]
-struct RedditData {
+pub struct RedditData {
 	data: RedditDataPosts,
 }
 

@@ -5,8 +5,8 @@ use tinytemplate::TinyTemplate;
 use tokio::sync::oneshot;
 
 use crate::{
-	BASE_URL,
-	reddit::{self, Sort, Time},
+	BASE_URL, USE_SERVER_FETCH,
+	reddit::{self, RedditData, Sort, Time, make_request_url},
 };
 
 pub async fn get(
@@ -14,16 +14,25 @@ pub async fn get(
 	sort: Option<Sort>,
 	time: Option<Time>,
 	autoplay: bool,
+	data: Option<RedditData>,
 ) -> Result<String, Box<dyn Error>> {
+	let full_page = data.is_none();
+	let limit = 25;
 	let time = time.unwrap_or(Time::Day);
 	let sort = sort.unwrap_or(Sort::Hot);
 
 	let mut cards = vec![];
 	let mut any_hls = false;
 	if let Some(x) = &sub {
-		let (tx, rx) = oneshot::channel();
-		reddit::get_posts(x.clone(), sort, time, 25, tx);
-		let posts = rx.await??;
+		let posts = if *USE_SERVER_FETCH {
+			let (tx, rx) = oneshot::channel();
+			reddit::get_posts(x.clone(), sort, time, limit, tx);
+			rx.await??
+		} else if let Some(json) = data {
+			reddit::parse_json(json, x, sort, time)?
+		} else {
+			vec![]
+		};
 		for p in posts {
 			let width;
 			let height;
@@ -157,6 +166,12 @@ pub async fn get(
 	});
 	tt.add_template("grid", &templ)?;
 	Ok(tt.render("grid", &Context {
+		full_page,
+		have_data: !cards.is_empty(),
+		fetch_url: sub
+			.as_ref()
+			.map(|sub| make_request_url(sub, sort, time, limit))
+			.unwrap_or_default(),
 		subs_are_empty: sub.is_none(),
 		title,
 		one_sub: sub.as_ref().map(|x| !x.contains('+')).unwrap_or(true),
@@ -186,6 +201,9 @@ pub async fn get(
 
 #[derive(Serialize)]
 struct Context {
+	full_page: bool,
+	have_data: bool,
+	fetch_url: String,
 	title: String,
 	cards: Vec<Card>,
 	sort_top: bool,

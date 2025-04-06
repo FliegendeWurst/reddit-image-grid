@@ -4,15 +4,15 @@ use std::net::SocketAddr;
 use std::thread;
 use std::time::SystemTime;
 
-use axum::Router;
 use axum::extract::{Path, Query, RawQuery, Request};
 use axum::http::{StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{Html, IntoResponse, Redirect, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
+use axum::{Json, Router};
 use axum_client_ip::{ClientIp, ClientIpSource};
 use itertools::Itertools;
-use reddit_image_grid::reddit::{self, Time};
+use reddit_image_grid::reddit::{self, RedditData, Time};
 use reddit_image_grid::{BASE_URL, PORT, template};
 use serde::Deserialize;
 use tower_http::catch_panic::CatchPanicLayer;
@@ -46,6 +46,7 @@ async fn real_main() {
 		.route("/", get(root))
 		.route("/favicon.png", get(favicon))
 		.route("/hls.min.js", get(hls_js))
+		.route("/render", post(render_json))
 		.route("/r/{sub}", get(root_with_sub_redirect))
 		.route("/r/{sub}/", get(root_with_sub))
 		.route("/r/{sub}/{sort}", get(root_with_sub_sort_redirect))
@@ -62,6 +63,19 @@ async fn real_main() {
 	axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
 		.await
 		.expect("failed to start axum");
+}
+
+async fn render_json(Query(q): Query<Q2>, Json(payload): Json<RedditData>) -> Result<Html<String>> {
+	Ok(Html(
+		template::get(
+			Some(q.sub),
+			Some(q.sort.parse()?),
+			Some(q.time.parse()?),
+			false,
+			Some(payload),
+		)
+		.await?,
+	))
 }
 
 async fn log_time(ClientIp(ip): ClientIp, req: Request, next: Next) -> Response {
@@ -109,12 +123,12 @@ async fn hls_js() -> impl IntoResponse {
 
 #[axum::debug_handler]
 async fn root() -> Result<Html<String>> {
-	Ok(Html(template::get(None, None, None, false).await?))
+	Ok(Html(template::get(None, None, None, false, None).await?))
 }
 
 async fn root_with_sub(Path(sub): Path<String>, Query(query): Query<Q>) -> Result<Html<String>> {
 	Ok(Html(
-		template::get(Some(sub), None, None, query.autoplay.unwrap_or(false)).await?,
+		template::get(Some(sub), None, None, query.autoplay.unwrap_or(false), None).await?,
 	))
 }
 
@@ -131,6 +145,7 @@ async fn root_with_sub_sort(Path(sub_sort): Path<(String, String)>, Query(query)
 			Some(sub_sort.1.parse()?),
 			time,
 			query.autoplay.unwrap_or(false),
+			None,
 		)
 		.await?,
 	))
@@ -150,6 +165,13 @@ async fn root_with_sub_sort_redirect(sub_sort: Path<(String, String)>, RawQuery(
 struct Q {
 	t: Option<String>,
 	autoplay: Option<bool>,
+}
+
+#[derive(Deserialize)]
+struct Q2 {
+	sub: String,
+	sort: String,
+	time: String,
 }
 
 pub struct AppError {
