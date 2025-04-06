@@ -3,7 +3,8 @@ reddit-image-grid
 
 Full screen image/video grid for reddit.
 
-Try it here: https://fliegendewurst.eu/rig/
+<strike>Try it here: https://fliegendewurst.eu/rig/</strike>
+Live demo is broken due to reddit ban of cloud IPs. Check back tomorrow for a fix, or run it yourself (see below).
 
 ## Similar tools
 
