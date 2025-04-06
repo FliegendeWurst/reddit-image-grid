@@ -5,7 +5,7 @@ Configurable full screen image/video grid for Reddit.
 
 Try it here: https://fliegendewurst.eu/rig/
 
-- sort by: hot/new/controversial/top
+- sort by: hot / new / controversial / top
 - filter by: last hour / day / week / month / year / all time
 - one or more subreddits
 - autoplay videos (optional)
@@ -15,9 +15,11 @@ Try it here: https://fliegendewurst.eu/rig/
 
 - [redditp](https://github.com/ubershmekel/redditp): full screen slide show
 
-## Configuration
+## Self-hosting
 
-Set both `REDDIT_IMAGE_GRID_BASE_URL` (without trailing slash) and `REDDIT_IMAGE_GRID_PORT`.
+Run: `cargo install --git https://github.com/FliegendeWurst/reddit-image-grid`.
+
+Set both `REDDIT_IMAGE_GRID_BASE_URL` (without trailing slash) and `REDDIT_IMAGE_GRID_PORT`, then run the `server` binary.
 
 Example: 
 
