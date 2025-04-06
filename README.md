@@ -1,9 +1,15 @@
 reddit-image-grid
 =================
 
-Full screen image/video grid for reddit.
+Configurable full screen image/video grid for Reddit.
 
 Try it here: https://fliegendewurst.eu/rig/
+
+- sort by: hot/new/controversial/top
+- filter by: last hour / day / week / month / year / all time
+- one or more subreddits
+- autoplay videos (optional)
+- configurable number of columns (1-10)
 
 ## Similar tools
 
