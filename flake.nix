@@ -75,7 +75,7 @@
               homepage = "https://github.com/FliegendeWurst/reddit-image-grid";
               license = licenses.gpl3Plus;
               maintainers = with maintainers; [ fliegendewurst ];
-              mainProgram = "reddit-image-grid";
+              mainProgram = "server";
             };
           };
         }

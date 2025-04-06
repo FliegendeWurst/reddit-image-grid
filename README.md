@@ -1,9 +1,13 @@
 reddit-image-grid
 =================
 
+Full screen image/video grid for reddit.
+
+Try it here: https://fliegendewurst.eu/rig/
+
 ## Similar tools
 
-- https://github.com/ubershmekel/redditp: full screen slide show
+- [redditp](https://github.com/ubershmekel/redditp): full screen slide show
 
 ## Configuration
 
