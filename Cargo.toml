@@ -1,0 +1,22 @@
+[package]
+name = "reddit-image-grid"
+version = "0.1.0"
+edition = "2024"
+authors = ["FliegendeWurst <arne.keller@posteo.de>"]
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/FliegendeWurst/reddit-image-grid"
+
+[dependencies]
+anyhow = { version = "1.0.97", default-features = false, features = ["std"] }
+axum = { version = "0.8.3", default-features = false, features = ["http1", "http2", "macros", "query", "tokio"] }
+axum-client-ip = "1.0.0"
+html-escape = "0.2.13"
+itertools = "0.14.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_urlencoded = "0.7.1"
+tinytemplate = "1.2.1"
+tokio = { version = "1.44.1", default-features = false, features = ["rt", "macros", "sync"] }
+tower-http = { version = "0.6.2", default-features = false, features = ["catch-panic"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+ureq = { version = "3.0.10", default-features = false, features = ["rustls", "platform-verifier", "gzip", "brotli", "json"] }

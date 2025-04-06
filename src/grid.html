@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="{ base_url }/favicon.png" />
+<title>{ title }</title>
+<style>
+body {
+	--outline-color: #000;
+}
+@media (prefers-color-scheme: dark) {
+	body {
+		background-color: #000;
+		color: #fff;
+		--outline-color: #fff;
+	}
+	.card > span {
+		color: #000;
+	}
+}
+body {
+	overflow-y: scroll;
+}
+.grid {
+	display: grid;
+	grid-row-gap: 5px;
+	grid-column-gap: 5px;
+	--size: 10px;
+	grid-template-columns: repeat(auto-fill, var(--size));
+	grid-auto-rows: var(--size);
+	margin-left: auto;
+  	margin-right: auto;
+}
+.card {
+	display: flex;
+	justify-content: center;
+	text-align: center;
+	width: 100%;
+	opacity: 0;
+	transition: opacity 0.5s;
+	/* absolute positioning context */
+	transform: translate(0px,0px);
+}
+.card > img {
+	align-self: start;
+  	border-radius: 5px;
+}
+.card > span {
+	position: absolute;
+  	top: 0px;
+	width: 100%;
+  	background: white;
+  	opacity: .6;
+	text-overflow: ellipsis;
+	overflow: hidden;
+
+	transition: transform 0.5s;
+	transform: rotateX(90deg);
+}
+
+.card:hover > span {
+	transform: rotateX(0deg);
+}
+
+.fix-width {
+	width: 100%;
+	border: 1px solid var(--outline-color);
+}
+.fix-height {
+	height: 100%;
+	border: 1px solid greenyellow;
+}
+
+form {
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+
+	padding-bottom: 1em;
+}
+fieldset {
+	display: inline-block;
+}
+.sub {
+	border: 1px solid var (--outline-color);
+}
+.sub::after {
+	content: " · ";
+}
+.removeSub {
+	line-height: .7em;
+  	font-size: 1rem;
+	margin-left: .3em;
+}
+</style>
+
+<form>
+<fieldset>
+<legend>Subreddits</legend>
+{{ for sub in subs_list }}
+<span class="sub">{ sub }{{ if not one_sub }}<button class="removeSub" type="button">&times;</button>{{ endif }}</span>
+{{ endfor }}
+<input type="text" placeholder="EarthPorn" id="nextSub">
+<button id="nextSubAdd" type="button">Add</button>
+</fieldset>
+<fieldset>
+<legend>Sort</legend>
+<label><input type="radio" name="sort" autocomplete="off" value="hot" {{ if sort_hot }}checked{{ endif }} />Hot</label>
+<label><input type="radio" name="sort" autocomplete="off" value="new" {{ if sort_new }}checked{{ endif }} />New</label>
+<label><input type="radio" name="sort" autocomplete="off" value="controversial" {{ if sort_controversial }}checked{{ endif }} />Controversial</label>
+<label><input type="radio" name="sort" autocomplete="off" value="top" {{ if sort_top }}checked{{ endif }} />Top</label>
+</fieldset>
+{{ if not sort_hot }}
+{{ if not sort_new }}
+<fieldset>
+<legend>Time</legend>
+<label><input type="radio" name="time" autocomplete="off" value="hour" {{ if time_hour }}checked{{ endif }} />Hour</label>
+<label><input type="radio" name="time" autocomplete="off" value="day" {{ if time_day }}checked{{ endif }} />Day</label>
+<label><input type="radio" name="time" autocomplete="off" value="week" {{ if time_week }}checked{{ endif }} />Week</label>
+<label><input type="radio" name="time" autocomplete="off" value="month" {{ if time_month }}checked{{ endif }} />Month</label>
+<label><input type="radio" name="time" autocomplete="off" value="year" {{ if time_year }}checked{{ endif }} />Year</label>
+<label><input type="radio" name="time" autocomplete="off" value="all" {{ if time_all }}checked{{ endif }} />All</label>
+</fieldset>
+{{ endif }}
+{{ endif }}
+<fieldset>
+<legend>Columns</legend>
+<input type="range" min="1" max="10" value="4" id="size">
+</fieldset>
+<fieldset>
+<legend>Tweaks</legend>
+<!-- <label><input type="checkbox" id="topInterleave">Interleave top posts</label> -->
+<!-- <label><input type="checkbox" id="firstImage">Show only first image of gallery</label> -->
+<label><input type="checkbox" id="autoplay" autocomplete="off" {{ if autoplay }}checked{{ endif }}>Autoplay videos</label>
+</fieldset>
+</form>
+
+{{ if any_hls}}<script src="{ base_url }/hls.min.js"></script>{{ endif }}
+
+<div class="grid" id="main-grid">
+	{{ for card in cards }}
+	<div class="card" style="grid-column-end: span {card.width}; grid-row-end: span {card.height}; opacity: 1;">
+		{{ if card.is_hls }}
+		<video id="video{@index}" controls class="{card.class}" {{ if autoplay }}autoplay muted{{ endif }} loop>
+		</video>
+    	<script>
+      	const video = document.getElementById('video{@index}');
+      	if (Hls.isSupported()) {
+        	const hls = new Hls({
+				maxBufferLength: 1,
+				maxBufferSize: 1000000,
+			});
+        	hls.loadSource('{card.src}');
+        	hls.attachMedia(video);
+			if ({autoplay}) {
+	        	hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+          			video.muted = true;
+          			video.play();
+        		});
+			}
+    	}
+      	else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      		video.src = '{card.src}';
+      	  	video.addEventListener('canplay', function () {
+				if ({autoplay}) {
+      	    		video.play();
+				}
+      		});
+      	}
+    	</script>
+		{{ else }}
+		{{ if card.is_mp4 }}
+		<video controls class="{card.class}" {{ if autoplay }}autoplay muted{{ endif }} loop>
+			{{ for src_url in card.mp4_urls }}
+  			<source src="{src_url}" type="video/mp4" />
+			{{ endfor }}
+		</video>
+		{{ else }}
+		{{ if card.is_embed }}
+		{ card.src | raw_html }
+		{{ else }}
+		<img src="{card.src}" class="{card.class}" loading="lazy">
+		{{ endif }}
+		{{ endif }}
+		{{ endif }}
+		<span><a href="https://old.reddit.com/r/{card.sub}">/r/{card.sub}</a> · <a href="https://old.reddit.com/u/{card.user}">/u/{card.user}</a> · <a href="https://old.reddit.com{card.permalink}">{card.title}</a></span>
+	</div>
+	{{ endfor }}
+</div>
+
+<script>
+	"use strict";
+	const baseurl = "{ base_url }";
+	const subs = "{ subs }";
+	const sort = "{ sort }";
+	const time = "{ time }";
+	function sortUpdate(e) {
+		const newSort = e.target.value;
+		let newUrl = baseurl + "/r/" + subs + "/";
+		if (newSort !== "hot") {
+			newUrl += newSort + "/";
+		}
+		if (newSort !== "hot" && newSort !== "new") {
+			newUrl += "?t=" + time;
+		}
+		window.location.href = newUrl;
+	}
+	function timeUpdate(e) {
+		window.location.href = baseurl + "/r/" + subs + "/" + sort + "/?t=" + e.target.value;
+	}
+	function removeSub(e) {
+		e.preventDefault();
+		const sub = e.target.previousSibling.textContent;
+		let newSubs = subs.replace("+" + sub + "+", "+");
+		if (newSubs === subs) {
+			if (subs.indexOf(sub + "+") == 0) {
+				newSubs = subs.substring(sub.length + 1);
+			} else if (subs.indexOf("+" + sub) === subs.length - sub.length - 1) {
+				newSubs = subs.substring(0, subs.length - sub.length - 1);
+			}
+		}
+		let newUrl = baseurl + "/r/" + newSubs + "/";
+		if (sort !== "hot") {
+			newUrl += sort + "/";
+		}
+		if (sort !== "hot" && sort !== "new") {
+			newUrl += "?t=" + time;
+		}
+		window.location.href = newUrl;
+	}
+	for (const inp of document.querySelectorAll('input[name="sort"]')) {
+		inp.onclick = sortUpdate;
+	}
+	for (const inp of document.querySelectorAll('input[name="time"]')) {
+		inp.onclick = timeUpdate;
+	}
+	for (const inp of document.querySelectorAll('button.removeSub')) {
+		inp.onclick = removeSub;
+	}
+	function newSub() {
+		const nextSub = document.getElementById("nextSub").value;
+		console.log("adding sub " + nextSub);
+		if (nextSub === "" || subs.indexOf(nextSub + "+") === 0 || (subs.indexOf("+" + nextSub) !== -1 && subs.indexOf("+" + nextSub) === subs.length - nextSub.length - 1) || subs.indexOf("+" + nextSub + "+") !== -1) {
+			console.log("it's already there");
+			return;
+		}
+		let newUrl;
+		if ({ subs_are_empty }) {
+			newUrl = baseurl + "/r/" + nextSub + "/";
+		} else {
+			newUrl = baseurl + "/r/" + subs + "+" + nextSub + "/";
+		}
+		if (sort !== "hot") {
+			newUrl += sort + "/";
+		}
+		if (sort !== "hot" && sort !== "new") {
+			newUrl += "?t=" + time;
+		}
+		window.location.href = newUrl;
+	}
+	document.getElementsByTagName("form")[0].addEventListener("submit", e => {
+		e.preventDefault();
+		newSub();
+	});
+	document.getElementById("nextSubAdd").addEventListener("click", e => {
+		e.preventDefault();
+		newSub();
+	});
+
+	document.getElementById("autoplay").addEventListener("click", e => {
+		const newValue = e.target.checked;
+		const newUrl = new URL(window.location.href);
+		if (newValue) {
+			newUrl.searchParams.set("autoplay", newValue);
+		} else {
+			newUrl.searchParams.delete("autoplay");
+		}
+		window.location.href = newUrl.toString();
+	});
+
+	const sizeInput = document.getElementById("size");
+	const listener = _ => {
+		if (document.body.clientWidth <= 500) {
+			sizeInput.value = 1;
+		}
+		const newCols = Number(sizeInput.value);
+		const newSize = document.body.clientWidth / newCols / 20 - 5;
+		document.getElementById("main-grid").setAttribute("style", "--size: " + newSize + "px;");
+	};
+	sizeInput.addEventListener("input", listener);
+	document.addEventListener("DOMContentLoaded", listener);
+</script>
