@@ -116,7 +116,10 @@ pub struct SizedImage {
 
 static CLIENT: LazyLock<Agent> = LazyLock::new(|| {
 	Agent::config_builder()
-		.user_agent(concat!("reddit-image-grid/", env!("CARGO_PKG_VERSION")))
+		.user_agent(&format!(
+			"linux:reddit-image-grid:{} (by /u/username)",
+			env!("CARGO_PKG_VERSION")
+		))
 		.build()
 		.into()
 });
@@ -234,29 +237,47 @@ fn get_posts_internal(
 		} else if let Some(mm) = x.media_metadata {
 			count_mm += 1;
 			for x in mm.values() {
-				let src_url = x.s.u.replace("&amp;", "&");
-				let mut sizes: Vec<_> =
-					x.p.iter()
-						.map(|x| SizedImage {
-							width: x.x,
-							height: x.y,
-							src_url: x.u.replace("&amp;", "&"),
-						})
-						.collect();
-				sizes.push(SizedImage {
-					width: x.s.x,
-					height: x.s.y,
-					src_url: src_url.clone(),
-				});
-				posts.push(Post {
-					width: x.s.x,
-					height: x.s.y,
-					details: PostDetails::Image { src_url, sizes },
-					author: author.clone(),
-					sub: sub.clone(),
-					title: title.clone(),
-					permalink: permalink.clone(),
-				});
+				if let Some(url) = x.s.mp4.as_ref() {
+					posts.push(Post {
+						width: x.s.x,
+						height: x.s.y,
+						details: PostDetails::VideoMp4 {
+							mp4_urls: vec![url.replace("&amp;", "&")],
+						},
+						author: author.clone(),
+						sub: sub.clone(),
+						title: title.clone(),
+						permalink: permalink.clone(),
+					});
+				} else if let Some(u) = x.s.u.as_ref() {
+					let src_url = u.replace("&amp;", "&");
+					let mut sizes: Vec<_> =
+						x.p.iter()
+							.flat_map(|x| {
+								x.u.as_ref().map(|u| SizedImage {
+									width: x.x,
+									height: x.y,
+									src_url: u.replace("&amp;", "&"),
+								})
+							})
+							.collect();
+					sizes.push(SizedImage {
+						width: x.s.x,
+						height: x.s.y,
+						src_url: src_url.clone(),
+					});
+					posts.push(Post {
+						width: x.s.x,
+						height: x.s.y,
+						details: PostDetails::Image { src_url, sizes },
+						author: author.clone(),
+						sub: sub.clone(),
+						title: title.clone(),
+						permalink: permalink.clone(),
+					});
+				} else {
+					// TODO: log
+				}
 			}
 		} else if let Some(p) = x.preview {
 			count_preview += 1;
@@ -407,7 +428,9 @@ struct RedditDataMediaImage1 {
 	x: usize,
 	y: usize,
 	/// URL, html-escaped
-	u: String,
+	u: Option<String>,
+	/// If u is None, this may contain an mp4 URL, html-escaped
+	mp4: Option<String>,
 }
 
 impl fmt::Display for Sort {
