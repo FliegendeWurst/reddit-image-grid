@@ -227,6 +227,7 @@ To get started, enter a subreddit above. Or try one of these links:
 {{ endif }}
 {{ if full_page }}</div>
 {{ if not have_data }}
+{{ if not subs_are_empty }}
 <script>
 "use strict";
 async function doIt() {
@@ -258,6 +259,7 @@ try {
 }
 doIt();
 </script>
+{{ endif }}
 {{ endif }}
 
 <script>
