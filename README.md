@@ -28,6 +28,8 @@ REDDIT_IMAGE_GRID_BASE_URL=http://127.0.0.1:8080
 REDDIT_IMAGE_GRID_PORT=8080
 ```
 
+If you want to activate the "star" feature, set `REDDIT_IMAGE_GRID_DATABASE`. The server will create an SQLite database at the provided location.
+
 ## License
 
 `hls.min.js` is derived from Apache 2.0-licensed [hls.js](https://github.com/video-dev/hls.js/).

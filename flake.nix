@@ -56,7 +56,7 @@
           pkgs = nixpkgsFor.${system};
         in
         {
-          reddit-image-grid = pkgs.rustPlatform.buildRustPackage rec {
+          reddit-image-grid = pkgs.rustPlatform.buildRustPackage {
             pname = "reddit-image-grid";
             version = "0-unstable";
 
@@ -65,10 +65,17 @@
             cargoLock.lockFile = ./Cargo.lock;
 
             nativeBuildInputs = with nixpkgsFor.${lib.elemAt (lib.splitString "-cross-" system) 0}; [
+              rustPlatform.bindgenHook
+              pkg-config
             ];
 
             buildInputs = with pkgs; [
+              sqlite
             ];
+
+            buildFeatures = lib.optionals (system == "x86_64-linux-cross-aarch64-linux") [ "proxy" ];
+
+            env.LIBSQLITE3_SYS_USE_PKG_CONFIG = "1";
 
             meta = with lib; {
               description = "Simple image grid viewer for reddit";

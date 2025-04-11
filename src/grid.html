@@ -4,21 +4,25 @@
 <title>{ title }</title>
 <style>
 body {
+	--background-color: #fff;
 	--outline-color: #000;
+	--outline-color-visited: #333;
 }
 @media (prefers-color-scheme: dark) {
 	body {
 		background-color: #000;
+		--background-color: #000;
 		color: #fff;
 		--outline-color: #fff;
+		--outline-color-visited: #9f9;
 	}
 	.card > span {
 		color: #000;
 	}
-	#help a, fieldset a {
+	#help a, fieldset a, #popup a {
 		color: #aaf;
 	}
-	#help a:visited, fieldset a:visited {
+	#help a:visited, fieldset a:visited, #popup a:visited {
 		color: #faf;
 	}
 }
@@ -38,7 +42,6 @@ body {
 .card {
 	display: flex;
 	justify-content: center;
-	text-align: center;
 	width: 100%;
 	opacity: 0;
 	transition: opacity 0.5s;
@@ -49,7 +52,7 @@ body {
 	align-self: start;
   	border-radius: 5px;
 }
-.card > span {
+.span-top {
 	position: absolute;
   	top: 0px;
 	width: 100%;
@@ -58,21 +61,46 @@ body {
 	text-overflow: ellipsis;
 	overflow: hidden;
 
+	text-align: center;
+
+	transition: transform 0.5s;
+	transform: rotateX(90deg);
+}
+.div-bottom {
+	position: absolute;
+	bottom: 0px;
+	right: 0px;
+	background: white;
+  	opacity: .7;
+
 	transition: transform 0.5s;
 	transform: rotateX(90deg);
 }
 
-.card:hover > span {
+.card:hover > .span-top {
 	transform: rotateX(0deg);
+}
+.card:hover > .div-bottom {
+	transform: rotateX(0deg);
+}
+.star-button {
+	color: yellow;
+	background-color: black;
 }
 
 .fix-width {
 	width: 100%;
-	border: 1px solid var(--outline-color);
 }
 .fix-height {
 	height: 100%;
 	border: 1px solid greenyellow;
+}
+.content-link > img {
+	border: 1px solid var(--outline-color);
+	box-sizing: border-box;
+}
+.content-link:visited > img {
+	border-color: var(--outline-color-visited);
 }
 
 form {
@@ -88,9 +116,11 @@ fieldset {
 .sub {
 	border: 1px solid var (--outline-color);
 }
+/* {{ if not star_view }} */
 .sub::after {
 	content: " · ";
 }
+/* {{ endif }} */
 .removeSub {
 	line-height: .7em;
   	font-size: 1rem;
@@ -112,17 +142,36 @@ fieldset {
 	margin-right: auto;
 	max-width: 50em;
 }
+#popup {
+	border: 0.3em outset gold;
+	border-radius: 1em;
+	padding: 1em;
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 50em;
+
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: var(--background-color);
+
+	display: none;
+}
 </style>
 
 <form>
 <fieldset>
-<legend>Subreddits</legend>
+<legend>{{ if star_view }}Star list{{ else }}Subreddits{{ endif }}</legend>
 {{ for sub in subs_list }}
 <span class="sub">{ sub }{{ if not one_sub }}<button class="removeSub" type="button">&times;</button>{{ endif }}</span>
 {{ endfor }}
+{{ if not star_view }}
 <input type="text" placeholder="EarthPorn" id="nextSub">
 <button id="nextSubAdd" type="button">Add</button>
+{{ endif }}
 </fieldset>
+{{ if not star_view }}
 <fieldset>
 <legend>Sort</legend>
 <label><input type="radio" name="sort" autocomplete="off" value="hot" {{ if sort_hot }}checked{{ endif }} />Hot</label>
@@ -141,6 +190,7 @@ fieldset {
 <label><input type="radio" name="time" autocomplete="off" value="year" {{ if time_year }}checked{{ endif }} />Year</label>
 <label><input type="radio" name="time" autocomplete="off" value="all" {{ if time_all }}checked{{ endif }} />All</label>
 </fieldset>
+{{ endif }}
 {{ endif }}
 {{ endif }}
 <fieldset>
@@ -217,17 +267,35 @@ To get started, enter a subreddit above. Or try one of these links:
 		{{ if card.is_embed }}
 		{ card.src | raw_html }
 		{{ else }}
-		<img src="{card.src}" class="{card.class}" loading="lazy">
+		<a href="{card.url}" class="content-link"><img src="{card.src}" class="{card.class}" loading="lazy"></a>
 		{{ endif }}
 		{{ endif }}
 		{{ endif }}
-		<span><a href="https://old.reddit.com/r/{card.sub}">/r/{card.sub}</a> · <a href="https://old.reddit.com/u/{card.user}">/u/{card.user}</a> · <a href="https://old.reddit.com{card.permalink}">{card.title}</a></span>
+		<span class="span-top"><a href="https://old.reddit.com/r/{card.sub}">/r/{card.sub}</a> · <a href="https://old.reddit.com/u/{card.user}">/u/{card.user}</a> · <a href="https://old.reddit.com{card.permalink}">{card.title}</a></span>
+		{{ if not star_view }}<div class="div-bottom"><button class="star-button" type="button" data-reddit-id="{card.reddit_id}">★</button></div>{{ endif }}
 	</div>
 	{{ endfor }}
 {{ endif }}
 {{ if full_page }}</div>
+<div id="popup">Select star list
+<ol>
+	<li><button type="button" class="star-group-button" id="stars0" data-idx="0">(new)</button></li>
+	<li><button type="button" class="star-group-button" id="stars1" data-idx="1">(new)</button></li>
+	<li><button type="button" class="star-group-button" id="stars2" data-idx="2">(new)</button></li>
+	<li><button type="button" class="star-group-button" id="stars3" data-idx="3">(new)</button></li>
+	<li><button type="button" class="star-group-button" id="stars4" data-idx="4">(new)</button></li>
+	<li><button type="button" class="star-group-button" id="stars5" data-idx="5">(new)</button></li>
+	<li><button type="button" class="star-group-button" id="stars6" data-idx="6">(new)</button></li>
+	<li><button type="button" class="star-group-button" id="stars7" data-idx="7">(new)</button></li>
+	<li><button type="button" class="star-group-button" id="stars8" data-idx="8">(new)</button></li>
+	<li><button type="button" class="star-group-button" id="stars9" data-idx="9">(new)</button></li>
+</ol>
+<span id="new-group-message"></span>
+<button type="button" id="popup-ok">OK</button>
+</div>
 {{ if not have_data }}
 {{ if not subs_are_empty }}
+{{ if not star_view }}
 <script>
 "use strict";
 async function doIt() {
@@ -238,7 +306,7 @@ try {
 		grid.outerHTML = '<div id="help-error">Error fetching Reddit JSON data.</div>';
 	} else {
 		const text = await resp.text();
-		const rendered = await fetch("{ base_url }/render?sub={subs}&sort={sort}&time={time}", {
+		const rendered = await fetch("{ base_url }/render?sub={subs}&sort={sort}&time={time}&autoplay={autoplay}", {
 			method: "POST",
   			headers: {
     			"Content-Type": "application/json",
@@ -250,6 +318,9 @@ try {
 		} else {
 			const html = await rendered.text();
 			grid.innerHTML = html;
+			for (const b of document.querySelectorAll(".star-button")) {
+				b.onclick = star;
+			}
 		}
 	}
 } catch (e) {
@@ -259,6 +330,7 @@ try {
 }
 doIt();
 </script>
+{{ endif }}
 {{ endif }}
 {{ endif }}
 
@@ -336,10 +408,12 @@ doIt();
 		e.preventDefault();
 		newSub();
 	});
+	// {{ if not star_view }}
 	document.getElementById("nextSubAdd").addEventListener("click", e => {
 		e.preventDefault();
 		newSub();
 	});
+	// {{ endif }}
 
 	document.getElementById("autoplay").addEventListener("click", e => {
 		const newValue = e.target.checked;
@@ -350,6 +424,86 @@ doIt();
 			newUrl.searchParams.delete("autoplay");
 		}
 		window.location.href = newUrl.toString();
+	});
+
+	var starredPostId = "";
+
+	function dismissPopup() {
+		starredPostId = "";
+		document.getElementById("popup").style.display = "";
+	}
+
+	function getStarGroupNames() {
+		return JSON.parse(localStorage.getItem("stargroups") || '["", "", "", "", "", "", "", "", "", ""]');
+	}
+	function setStarGroupNames(x) {
+		return localStorage.setItem("stargroups", JSON.stringify(x));
+	}
+	function setupStarGroupNames() {
+		const data = getStarGroupNames();
+		for (let i = 0; i < 10; i++) {
+			const val = data[i];
+			if (val != "") {
+				document.getElementById("stars" + i).innerText = data[i];
+			} else {
+				document.getElementById("stars" + i).innerText = "(new)";
+			}
+		}
+		document.getElementById("new-group-message").innerText = "";
+	}
+
+	function star(e) {
+		starredPostId = e.target.getAttribute("data-reddit-id");
+		setupStarGroupNames();
+		document.getElementById("popup").style.display = "initial";
+	}
+	for (const b of document.querySelectorAll(".star-button")) {
+		b.onclick = star;
+	}
+
+	async function starGroup(e) {
+		const idx = Number(e.target.getAttribute("data-idx"));
+		const groupName = e.target.innerText;
+		await starGroupIdx(idx, groupName);
+	}
+	async function starGroupIdx(idx, groupName) {
+		const groupNames = getStarGroupNames();
+		if (groupName === "(new)" || groupName === "") {
+			groupName = "new";
+		}
+		const resp = await fetch(`{ base_url }/s/$\{groupName}/add/$\{starredPostId}`, {
+			method: "POST",
+		});
+		if (resp.ok) {
+			const newGroupName = await resp.text();
+			console.log(newGroupName);
+			groupNames[idx] = newGroupName;
+			if (groupName === "new") {
+				document.getElementById("new-group-message").innerHTML = `Created new star list <a href={base_url}/s/$\{newGroupName}/>$\{newGroupName}</a>.`;
+			} else {
+				dismissPopup();
+			}
+		} else {
+			const err = await resp.text();
+			document.getElementById("new-group-message").innerText = `Error: $\{err}`;
+		}
+		setStarGroupNames(groupNames);
+	}
+	for (const b of document.querySelectorAll(".star-group-button")) {
+		b.onclick = starGroup;
+	}
+	document.getElementById("popup-ok").onclick = dismissPopup;
+
+	document.body.addEventListener("keydown", (event) => {
+		if (starredPostId !== "" && event.key >= "0" && event.key <= "9") {
+			let idx = Number(event.key.charAt(0));
+			if (idx == 0) {
+				idx = 9;
+			} else {
+				idx -= 1;
+			}
+			starGroupIdx(idx, getStarGroupNames()[idx]);
+		}
 	});
 
 	const sizeInput = document.getElementById("size");

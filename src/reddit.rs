@@ -5,7 +5,7 @@ use std::{
 	sync::{LazyLock, RwLock},
 };
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::{
 	mpsc::{UnboundedSender, unbounded_channel},
 	oneshot::Sender,
@@ -90,6 +90,9 @@ impl FromStr for Time {
 
 #[derive(Debug)]
 pub struct Post {
+	/// ID, useful as `https://old.reddit.com/comments/{id}`
+	pub id: String,
+	pub url: String,
 	pub width: usize,
 	pub height: usize,
 	pub details: PostDetails,
@@ -178,6 +181,8 @@ pub fn parse_json(json: RedditData, sub: &str, sort: Sort, time: Time) -> Result
 	let mut count_other = 0;
 
 	for x in json.data.children.into_iter().map(|x| x.data) {
+		let id = x.id;
+		let url = x.url;
 		if x.removed_by_category.is_some() {
 			count_rm += 1;
 			continue;
@@ -200,6 +205,8 @@ pub fn parse_json(json: RedditData, sub: &str, sort: Sort, time: Time) -> Result
 					sub,
 					title,
 					permalink,
+					id,
+					url,
 				});
 			} else if let Some(embed) = sm.oembed {
 				count_sm_embed += 1;
@@ -210,20 +217,22 @@ pub fn parse_json(json: RedditData, sub: &str, sort: Sort, time: Time) -> Result
 						.thumbnail_url
 						.rfind('/')
 						.ok_or(Box::new(StringError("wrong redgifs url")))?;
-					let id = &embed.thumbnail_url[last_slash + 1..embed.thumbnail_url.len() - "-poster.jpg".len()];
+					let r_id = &embed.thumbnail_url[last_slash + 1..embed.thumbnail_url.len() - "-poster.jpg".len()];
 					posts.push(Post {
 						width,
 						height,
 						details: PostDetails::VideoMp4 {
 							mp4_urls: vec![
-								format!("https://media.redgifs.com/{id}-mobile.m4s"),
-								format!("https://media.redgifs.com/{id}-mobile.mp4"),
+								format!("https://media.redgifs.com/{r_id}-mobile.m4s"),
+								format!("https://media.redgifs.com/{r_id}-mobile.mp4"),
 							],
 						},
 						author,
 						sub,
 						title,
 						permalink,
+						id,
+						url,
 					});
 				} else {
 					posts.push(Post {
@@ -236,6 +245,8 @@ pub fn parse_json(json: RedditData, sub: &str, sort: Sort, time: Time) -> Result
 						sub,
 						title,
 						permalink,
+						id,
+						url,
 					});
 				}
 			}
@@ -253,6 +264,8 @@ pub fn parse_json(json: RedditData, sub: &str, sort: Sort, time: Time) -> Result
 						sub: sub.clone(),
 						title: title.clone(),
 						permalink: permalink.clone(),
+						id: id.clone(),
+						url: url.clone(),
 					});
 				} else if let Some(u) = x.s.u.as_ref() {
 					let src_url = u.replace("&amp;", "&");
@@ -279,6 +292,8 @@ pub fn parse_json(json: RedditData, sub: &str, sort: Sort, time: Time) -> Result
 						sub: sub.clone(),
 						title: title.clone(),
 						permalink: permalink.clone(),
+						id: id.clone(),
+						url: url.clone(),
 					});
 				} else {
 					// TODO: log
@@ -320,6 +335,8 @@ pub fn parse_json(json: RedditData, sub: &str, sort: Sort, time: Time) -> Result
 						sub: sub.clone(),
 						title: title.clone(),
 						permalink: permalink.clone(),
+						id: id.clone(),
+						url: url.clone(),
 					});
 				} else {
 					posts.push(Post {
@@ -330,6 +347,8 @@ pub fn parse_json(json: RedditData, sub: &str, sort: Sort, time: Time) -> Result
 						sub: sub.clone(),
 						title: title.clone(),
 						permalink: permalink.clone(),
+						id: id.clone(),
+						url: url.clone(),
 					});
 				}
 			}
@@ -350,6 +369,20 @@ pub struct RedditData {
 	data: RedditDataPosts,
 }
 
+impl RedditData {
+	pub fn from_posts(posts: Vec<RedditDataPostData>) -> Self {
+		RedditData {
+			data: RedditDataPosts {
+				children: posts.into_iter().map(|x| RedditDataPost { data: x }).collect(),
+			},
+		}
+	}
+
+	pub fn posts(&self) -> Vec<&RedditDataPostData> {
+		self.data.children.iter().map(|x| &x.data).collect()
+	}
+}
+
 #[derive(Deserialize, Debug)]
 struct RedditDataPosts {
 	children: Vec<RedditDataPost>,
@@ -360,13 +393,14 @@ struct RedditDataPost {
 	data: RedditDataPostData,
 }
 
-#[derive(Deserialize, Debug)]
-struct RedditDataPostData {
+#[derive(Deserialize, Debug, Serialize, Clone)]
+pub struct RedditDataPostData {
 	title: String,
 	url: String,
 	subreddit: String,
 	author: String,
 	permalink: String,
+	pub id: String,
 	// Do not use thumbnail_height/thumbnail_width, they are highly unreliable.
 	/// Available for videos
 	secure_media: Option<RedditDataSecureMedia>,
@@ -378,14 +412,14 @@ struct RedditDataPostData {
 	removed_by_category: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 struct RedditDataSecureMedia {
 	reddit_video: Option<RedditDataRedditVideo>,
 	r#type: Option<String>,
 	oembed: Option<RedditDataEmbed>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 struct RedditDataRedditVideo {
 	height: usize,
 	width: usize,
@@ -393,7 +427,7 @@ struct RedditDataRedditVideo {
 	hls_url: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 struct RedditDataEmbed {
 	html: String,
 	thumbnail_url: String,
@@ -401,12 +435,12 @@ struct RedditDataEmbed {
 	height: usize,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 struct RedditDataPreview {
 	images: Vec<RedditDataImage>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 struct RedditDataImage {
 	source: RedditDataImage1,
 	resolutions: Vec<RedditDataImage1>,
@@ -414,7 +448,7 @@ struct RedditDataImage {
 	variants: Option<HashMap<String, Box<RedditDataImage>>>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 struct RedditDataImage1 {
 	/// URL, html-escaped
 	url: String,
@@ -422,13 +456,13 @@ struct RedditDataImage1 {
 	height: usize,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 struct RedditDataMediaImage {
 	p: Vec<RedditDataMediaImage1>,
 	s: RedditDataMediaImage1,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize, Clone)]
 struct RedditDataMediaImage1 {
 	x: usize,
 	y: usize,

@@ -9,14 +9,80 @@ use crate::{
 	reddit::{self, RedditData, Sort, Time, make_request_url},
 };
 
-pub async fn get(
+pub struct TemplateParameters {
 	sub: Option<String>,
 	sort: Option<Sort>,
 	time: Option<Time>,
 	autoplay: bool,
 	data: Option<RedditData>,
-) -> Result<String, Box<dyn Error>> {
-	let full_page = data.is_none();
+	star_view: bool,
+}
+
+impl TemplateParameters {
+	/// Render full UI.
+	pub fn render_ui(sub: Option<String>, sort: Option<Sort>, time: Option<Time>, autoplay: bool) -> Self {
+		TemplateParameters {
+			sub,
+			sort,
+			time,
+			autoplay,
+			data: None,
+			star_view: false,
+		}
+	}
+
+	/// Render full UI.
+	pub fn render_ui_stars(group: String, autoplay: bool, data: RedditData) -> Self {
+		TemplateParameters {
+			sub: Some(group),
+			sort: None,
+			time: None,
+			autoplay,
+			data: Some(data),
+			star_view: true,
+		}
+	}
+
+	/// Render only the provided grid items.
+	/// Used as AJAX response.
+	pub fn render_grid_items(
+		sub: Option<String>,
+		sort: Option<Sort>,
+		time: Option<Time>,
+		autoplay: bool,
+		data: Option<RedditData>,
+	) -> Self {
+		TemplateParameters {
+			sub,
+			sort,
+			time,
+			autoplay,
+			data,
+			star_view: false,
+		}
+	}
+
+	/// Render landing page.
+	pub fn landing_page() -> Self {
+		TemplateParameters {
+			sub: None,
+			sort: None,
+			time: None,
+			autoplay: false,
+			data: None,
+			star_view: false,
+		}
+	}
+}
+
+pub async fn get(params: TemplateParameters) -> Result<String, Box<dyn Error>> {
+	let sub = params.sub;
+	let sort = params.sort;
+	let time = params.time;
+	let autoplay = params.autoplay;
+	let data = params.data;
+	let star_view = params.star_view;
+	let full_page = data.is_none() || star_view;
 	let limit = 25;
 	let time = time.unwrap_or(Time::Day);
 	let sort = sort.unwrap_or(Sort::Hot);
@@ -24,7 +90,9 @@ pub async fn get(
 	let mut cards = vec![];
 	let mut any_hls = false;
 	if let Some(x) = &sub {
-		let posts = if *USE_SERVER_FETCH {
+		let posts = if star_view {
+			reddit::parse_json(data.unwrap(), x, sort, time)?
+		} else if *USE_SERVER_FETCH {
 			let (tx, rx) = oneshot::channel();
 			reddit::get_posts(x.clone(), sort, time, limit, tx);
 			rx.await??
@@ -34,6 +102,7 @@ pub async fn get(
 			vec![]
 		};
 		for p in posts {
+			let reddit_id = p.id;
 			let width;
 			let height;
 			// let class;
@@ -92,6 +161,8 @@ pub async fn get(
 						user: p.author,
 						title: p.title,
 						permalink: p.permalink,
+						reddit_id,
+						url: p.url,
 					});
 				},
 				reddit::PostDetails::Video { hls_url } => {
@@ -109,6 +180,8 @@ pub async fn get(
 						user: p.author,
 						title: p.title,
 						permalink: p.permalink,
+						reddit_id,
+						url: p.url,
 					});
 				},
 				reddit::PostDetails::VideoMp4 { mp4_urls } => {
@@ -125,6 +198,8 @@ pub async fn get(
 						user: p.author,
 						title: p.title,
 						permalink: p.permalink,
+						reddit_id,
+						url: p.url,
 					});
 				},
 				reddit::PostDetails::VideoEmbed { html } => {
@@ -141,6 +216,8 @@ pub async fn get(
 						user: p.author,
 						title: p.title,
 						permalink: p.permalink,
+						reddit_id,
+						url: p.url,
 					});
 				},
 			}
@@ -196,6 +273,7 @@ pub async fn get(
 		time_year: time == Time::Year,
 		time_all: time == Time::All,
 		any_hls,
+		star_view,
 	})?)
 }
 
@@ -225,6 +303,7 @@ struct Context {
 	time_year: bool,
 	time_all: bool,
 	any_hls: bool,
+	star_view: bool,
 }
 
 #[derive(Serialize)]
@@ -243,4 +322,6 @@ struct Card {
 	user: String,
 	title: String,
 	permalink: String,
+	reddit_id: String,
+	url: String,
 }
