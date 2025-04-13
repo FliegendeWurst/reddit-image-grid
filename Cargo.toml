@@ -12,7 +12,8 @@ axum = { version = "0.8.3", default-features = false, features = ["http1", "http
 axum-client-ip = "1.0.0"
 html-escape = "0.2.13"
 itertools = "0.14.0"
-petname = { version = "2.0.2", default-features = false, features = ["default-rng", "default-words"] }
+petname = { version = "3.0.0-alpha.1", default-features = false, features = ["default-rng", "default-words"] }
+rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 rusqlite = { version = "0.34.0", features = ["buildtime_bindgen"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"

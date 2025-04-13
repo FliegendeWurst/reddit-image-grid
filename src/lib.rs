@@ -61,3 +61,26 @@ impl Display for StringError {
 		write!(f, "{}", self.0)
 	}
 }
+
+pub trait UppercaseFirst {
+	fn uppercase_first(&self) -> String;
+}
+
+impl UppercaseFirst for &str {
+	fn uppercase_first(&self) -> String {
+		let mut chars = self.chars();
+		let mut out = String::new();
+		if let Some(c) = chars.next() {
+			out.extend(c.to_uppercase());
+		}
+		out.extend(chars);
+		out
+	}
+}
+
+#[test]
+fn uppercase_first_test() {
+	assert_eq!("Into", "into".uppercase_first());
+	assert_eq!("Into", "ınto".uppercase_first());
+	assert_eq!("Įnto", "įnto".uppercase_first());
+}

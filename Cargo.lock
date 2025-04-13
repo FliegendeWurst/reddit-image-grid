@@ -951,9 +951,9 @@ checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
 name = "petname"
-version = "2.0.2"
+version = "3.0.0-alpha.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cd31dcfdbbd7431a807ef4df6edd6473228e94d5c805e8cf671227a21bad068"
+checksum = "7c5a1d55469e782240874f00195bebc2dff4301f6c395cee05ebd288eef29703"
 dependencies = [
  "anyhow",
  "itertools 0.14.0",
@@ -1053,6 +1053,7 @@ dependencies = [
  "html-escape",
  "itertools 0.14.0",
  "petname",
+ "rand",
  "rusqlite",
  "serde",
  "serde_json",

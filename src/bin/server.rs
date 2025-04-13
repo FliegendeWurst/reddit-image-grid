@@ -18,7 +18,7 @@ use petname::{Generator, Petnames};
 use reddit_image_grid::database::{CommonQueries, DB};
 use reddit_image_grid::reddit::{self, RedditData, RedditDataPostData, Time};
 use reddit_image_grid::template::TemplateParameters;
-use reddit_image_grid::{BASE_URL, PORT, StringError, template, with_db};
+use reddit_image_grid::{BASE_URL, PORT, StringError, UppercaseFirst, template, with_db};
 use serde::Deserialize;
 use tokio::sync::RwLock;
 use tower_http::catch_panic::CatchPanicLayer;
@@ -111,19 +111,11 @@ async fn star_group(Path(group): Path<String>) -> Result<Html<String>> {
 
 fn gen_petname() -> String {
 	let pn = Petnames::default();
-	let raw = format!(":{}", pn.generate_one(3, ":").unwrap());
-	raw.chars()
-		.tuple_windows()
-		.map(|(x, y)| {
-			if x == ':' {
-				(x, y.to_uppercase().next().unwrap())
-			} else {
-				(x, y)
-			}
-		})
-		.map(|x| x.1)
-		.filter(|x| *x != ':')
-		.collect()
+	pn.generate_raw(&mut rand::thread_rng(), 3)
+		.unwrap()
+		.into_iter()
+		.map(|x| x.uppercase_first())
+		.join("")
 }
 
 async fn star_group_submit(Path((mut group, id)): Path<(String, String)>) -> Result<String> {
